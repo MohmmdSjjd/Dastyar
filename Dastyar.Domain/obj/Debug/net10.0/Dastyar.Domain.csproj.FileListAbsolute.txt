@@ -1,0 +1,11 @@
+e:\Personal\Dastyar\Dastyar.Domain\bin\Debug\net10.0\Dastyar.Domain.deps.json
+e:\Personal\Dastyar\Dastyar.Domain\bin\Debug\net10.0\Dastyar.Domain.dll
+e:\Personal\Dastyar\Dastyar.Domain\bin\Debug\net10.0\Dastyar.Domain.pdb
+e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\Dastyar.Domain.GeneratedMSBuildEditorConfig.editorconfig
+e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\Dastyar.Domain.AssemblyInfoInputs.cache
+e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\Dastyar.Domain.AssemblyInfo.cs
+e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\Dastyar.Domain.csproj.CoreCompileInputs.cache
+e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\Dastyar.Domain.dll
+e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\refint\Dastyar.Domain.dll
+e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\Dastyar.Domain.pdb
+e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\ref\Dastyar.Domain.dll

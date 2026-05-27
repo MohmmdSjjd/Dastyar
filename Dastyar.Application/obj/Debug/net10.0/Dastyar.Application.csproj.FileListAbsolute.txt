@@ -1,0 +1,15 @@
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\Dastyar.Application.csproj.AssemblyReference.cache
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\Dastyar.Application.GeneratedMSBuildEditorConfig.editorconfig
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\Dastyar.Application.AssemblyInfoInputs.cache
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\Dastyar.Application.AssemblyInfo.cs
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\Dastyar.Application.csproj.CoreCompileInputs.cache
+e:\Personal\Dastyar\Dastyar.Application\bin\Debug\net10.0\Dastyar.Application.deps.json
+e:\Personal\Dastyar\Dastyar.Application\bin\Debug\net10.0\Dastyar.Application.dll
+e:\Personal\Dastyar\Dastyar.Application\bin\Debug\net10.0\Dastyar.Application.pdb
+e:\Personal\Dastyar\Dastyar.Application\bin\Debug\net10.0\Dastyar.Domain.dll
+e:\Personal\Dastyar\Dastyar.Application\bin\Debug\net10.0\Dastyar.Domain.pdb
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\Dastyar..9A10B11A.Up2Date
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\Dastyar.Application.dll
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\refint\Dastyar.Application.dll
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\Dastyar.Application.pdb
+e:\Personal\Dastyar\Dastyar.Application\obj\Debug\net10.0\ref\Dastyar.Application.dll
