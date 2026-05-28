@@ -9,7 +9,10 @@ public sealed record UpdateCategoryCommand(
     string Code,
     string Name,
     string? ParentCategoryCode,
-    string? UnitDefault) : IRequest<Unit>;
+    string? UnitDefault,
+    string Scope = "Material",
+    bool IsActive = true,
+    int SortOrder = 0) : IRequest<Unit>;
 
 public sealed class UpdateCategoryCommandHandler(IRepository<Category, Guid> repository)
     : IRequestHandler<UpdateCategoryCommand, Unit>
@@ -47,6 +50,11 @@ public sealed class UpdateCategoryCommandHandler(IRepository<Category, Guid> rep
 
         category.Code = code;
         category.Name = request.Name.Trim();
+        category.Scope = Enum.TryParse(request.Scope, true, out Dastyar.Domain.Enums.CategoryScope parsedScope)
+            ? parsedScope
+            : Dastyar.Domain.Enums.CategoryScope.Material;
+        category.IsActive = request.IsActive;
+        category.SortOrder = request.SortOrder;
         category.ParentCategoryId = parentCategory?.Id;
         category.UnitDefault = string.IsNullOrWhiteSpace(request.UnitDefault)
             ? null

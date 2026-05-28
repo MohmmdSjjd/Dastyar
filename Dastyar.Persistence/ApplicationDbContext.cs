@@ -11,6 +11,15 @@ public sealed class ApplicationDbContext : DbContext
     {
     }
 
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Material> Materials => Set<Material>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<ProductMaterial> ProductMaterials => Set<ProductMaterial>();
+    public DbSet<MaterialAddonAssignment> MaterialAddonAssignments => Set<MaterialAddonAssignment>();
+    public DbSet<MaterialPriceChangeLog> MaterialPriceChangeLogs => Set<MaterialPriceChangeLog>();
+    public DbSet<FieldDefinition> FieldDefinitions => Set<FieldDefinition>();
+    public DbSet<AppUser> AppUsers => Set<AppUser>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Dastyar.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c514ba1225e769ebc231bf2a95670859d6eb85d1")]
 [assembly: System.Reflection.AssemblyProductAttribute("Dastyar.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Dastyar.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

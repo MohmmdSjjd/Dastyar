@@ -6,6 +6,8 @@ public sealed class UpdateMaterialRequest
     public string? Name { get; set; }
     public bool IsActive { get; set; } = true;
     public int BasePrice { get; set; }
+    public int? LastPurchasePrice { get; set; }
+    public int? DailyPurchasePrice { get; set; }
     public string? Unit { get; set; }
     public string? CategoryCode { get; set; }
     public string? DynamicFieldsJson { get; set; }

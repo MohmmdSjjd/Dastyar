@@ -10,6 +10,8 @@ public sealed record UpdateMaterialCommand(
     string? Name,
     bool IsActive,
     int BasePrice,
+    int? LastPurchasePrice,
+    int? DailyPurchasePrice,
     string? Unit,
     string? CategoryCode = null,
     string? DynamicFieldsJson = null) : IRequest<Unit>;
@@ -46,6 +48,8 @@ public sealed class UpdateMaterialCommandHandler(
         material.Name = request.Name?.Trim();
         material.IsActive = request.IsActive;
         material.BasePrice = request.BasePrice;
+        material.LastPurchasePrice = request.LastPurchasePrice ?? request.BasePrice;
+        material.DailyPurchasePrice = request.DailyPurchasePrice ?? request.BasePrice;
         material.Unit = string.IsNullOrWhiteSpace(request.Unit) ? null : request.Unit.Trim();
 
         if (request.DynamicFieldsJson != null)

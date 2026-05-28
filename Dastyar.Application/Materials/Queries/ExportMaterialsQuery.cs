@@ -17,6 +17,8 @@ public sealed class ExportMaterialsQueryHandler : IRequestHandler<ExportMaterial
         "IsActive",
         "CategoryCode",
         "BasePrice",
+        "LastPurchasePrice",
+        "DailyPurchasePrice",
         "Unit",
     };
 
@@ -90,6 +92,8 @@ public sealed class ExportMaterialsQueryHandler : IRequestHandler<ExportMaterial
                 ["IsActive"] = it.IsActive.ToString(),
                 ["CategoryCode"] = it.Category?.Code ?? string.Empty,
                 ["BasePrice"] = it.BasePrice.ToString(),
+                ["LastPurchasePrice"] = it.LastPurchasePrice.ToString(),
+                ["DailyPurchasePrice"] = it.DailyPurchasePrice.ToString(),
                 ["Unit"] = it.Unit ?? string.Empty,
             };
 

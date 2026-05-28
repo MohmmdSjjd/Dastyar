@@ -9,3 +9,4 @@ e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\Dastyar.Domain.dll
 e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\refint\Dastyar.Domain.dll
 e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\Dastyar.Domain.pdb
 e:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\ref\Dastyar.Domain.dll
+E:\Personal\Dastyar\Dastyar.Domain\obj\Debug\net10.0\Dastyar.Domain.sourcelink.json

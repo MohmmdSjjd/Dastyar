@@ -10,6 +10,8 @@ public sealed class Material : BaseEntity<Guid>, IFilterable, ISoftDeletedEntity
     public DateTime CreatedAtUtc { get; set; }
 
     public int BasePrice { get; set; }
+    public int LastPurchasePrice { get; set; }
+    public int DailyPurchasePrice { get; set; }
     public string? Unit { get; set; }
 
     public Guid? CategoryId { get; set; }
@@ -30,6 +32,8 @@ public sealed class Material : BaseEntity<Guid>, IFilterable, ISoftDeletedEntity
         "CategoryId",
         "CreatedAtUtc",
         "BasePrice",
+        "LastPurchasePrice",
+        "DailyPurchasePrice",
         "Unit",
     };
 

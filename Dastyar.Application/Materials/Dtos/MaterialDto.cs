@@ -10,6 +10,8 @@ public sealed record MaterialDto
     public string? CategoryCode { get; init; }
     public string? CategoryName { get; init; }
     public int BasePrice { get; init; }
+    public int LastPurchasePrice { get; init; }
+    public int DailyPurchasePrice { get; init; }
     public int AddonTotalPrice { get; init; }
     public int FinalPrice { get; init; }
     public string? Unit { get; init; }

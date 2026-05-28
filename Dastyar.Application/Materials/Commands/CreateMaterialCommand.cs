@@ -9,6 +9,8 @@ public sealed record CreateMaterialCommand(
     string? Code = null,
     string? CategoryCode = null,
     int BasePrice = 0,
+    int? LastPurchasePrice = null,
+    int? DailyPurchasePrice = null,
     string? Unit = null,
     string? DynamicFieldsJson = null) : IRequest<Guid>;
 
@@ -52,6 +54,8 @@ public sealed class CreateMaterialCommandHandler(
             CreatedAtUtc = DateTime.UtcNow,
             CategoryId = category?.Id,
             BasePrice = request.BasePrice,
+            LastPurchasePrice = request.LastPurchasePrice ?? request.BasePrice,
+            DailyPurchasePrice = request.DailyPurchasePrice ?? request.BasePrice,
             Unit = string.IsNullOrWhiteSpace(request.Unit) ? null : request.Unit.Trim(),
             DynamicFieldsJson = request.DynamicFieldsJson ?? string.Empty
         };

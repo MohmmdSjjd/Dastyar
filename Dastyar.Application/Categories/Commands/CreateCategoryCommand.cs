@@ -8,7 +8,10 @@ public sealed record CreateCategoryCommand(
     string Code,
     string Name,
     string? ParentCategoryCode,
-    string? UnitDefault) : IRequest<Guid>;
+    string? UnitDefault,
+    string Scope = "Material",
+    bool IsActive = true,
+    int SortOrder = 0) : IRequest<Guid>;
 
 public sealed class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand, Guid>
 {
@@ -44,6 +47,11 @@ public sealed class CreateCategoryCommandHandler : IRequestHandler<CreateCategor
             Id = Guid.NewGuid(),
             Code = code,
             Name = request.Name.Trim(),
+            Scope = Enum.TryParse(request.Scope, true, out Dastyar.Domain.Enums.CategoryScope parsedScope)
+                ? parsedScope
+                : Dastyar.Domain.Enums.CategoryScope.Material,
+            IsActive = request.IsActive,
+            SortOrder = request.SortOrder,
             ParentCategoryId = parentCategory?.Id,
             UnitDefault = string.IsNullOrWhiteSpace(request.UnitDefault) ? null : request.UnitDefault.Trim()
         };

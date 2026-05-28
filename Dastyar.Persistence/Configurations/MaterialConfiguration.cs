@@ -18,6 +18,8 @@ public sealed class MaterialConfiguration : IEntityTypeConfiguration<Material>
         builder.Property(x => x.Name).HasMaxLength(200);
         builder.Property(x => x.Unit).HasMaxLength(50);
         builder.Property(x => x.BasePrice).IsRequired();
+        builder.Property(x => x.LastPurchasePrice).IsRequired();
+        builder.Property(x => x.DailyPurchasePrice).IsRequired();
         builder.Property(x => x.DynamicFieldsJson).HasColumnType("nvarchar(max)");
         builder.Property(x => x.CreatedAtUtc).IsRequired();
 

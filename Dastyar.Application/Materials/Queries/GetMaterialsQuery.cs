@@ -84,7 +84,7 @@ public sealed class GetMaterialsQueryHandler : IRequestHandler<GetMaterialsQuery
                 }
 
                 var quantity = assignment.Quantity < 0 ? 0 : assignment.Quantity;
-                var totalPrice = addonMaterial.BasePrice * quantity;
+                var totalPrice = addonMaterial.LastPurchasePrice * quantity;
                 addonTotal += totalPrice;
 
                 appliedAddons.Add(new MaterialAppliedAddonDto
@@ -97,12 +97,12 @@ public sealed class GetMaterialsQueryHandler : IRequestHandler<GetMaterialsQuery
                     Unit = !string.IsNullOrWhiteSpace(assignment.UnitOverride)
                         ? assignment.UnitOverride
                         : addonMaterial.Unit,
-                    UnitPrice = addonMaterial.BasePrice,
+                    UnitPrice = addonMaterial.LastPurchasePrice,
                     TotalPrice = totalPrice
                 });
             }
 
-            var basePrice = material.BasePrice;
+            var basePrice = material.LastPurchasePrice;
             var finalPrice = basePrice + addonTotal;
 
             var unitEffective = !string.IsNullOrWhiteSpace(material.Unit)
@@ -119,6 +119,8 @@ public sealed class GetMaterialsQueryHandler : IRequestHandler<GetMaterialsQuery
                 CategoryCode = category?.Code,
                 CategoryName = category?.Name,
                 BasePrice = basePrice,
+                LastPurchasePrice = material.LastPurchasePrice,
+                DailyPurchasePrice = material.DailyPurchasePrice,
                 AddonTotalPrice = addonTotal,
                 FinalPrice = finalPrice,
                 Unit = material.Unit,

@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Dastyar.Application.Products.Commands;
 
-public sealed record CreateProductCommand(string Name, string? Code = null, string? CategoryCode = null) : IRequest<Guid>;
+public sealed record CreateProductCommand(string Name, string? Code = null, string? CategoryCode = null, string? Unit = null) : IRequest<Guid>;
 
 public sealed class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, Guid>
 {
@@ -43,7 +43,8 @@ public sealed class CreateProductCommandHandler : IRequestHandler<CreateProductC
             Name = request.Name.Trim(),
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            CategoryId = category?.Id
+            CategoryId = category?.Id,
+            Unit = string.IsNullOrWhiteSpace(request.Unit) ? null : request.Unit.Trim()
         };
 
         await _repository.AddAsync(entity, cancellationToken);

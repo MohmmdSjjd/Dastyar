@@ -122,7 +122,20 @@ public sealed class ImportMaterialsCommandHandler : IRequestHandler<ImportMateri
                 {
                     if (rowData.TryGetValue("Name", out var name)) existing.Name = name;
                     if (rowData.TryGetValue("IsActive", out var active)) existing.IsActive = ParseBool(active);
-                    if (rowData.TryGetValue("BasePrice", out var basePrice)) existing.BasePrice = ParseInt(basePrice);
+                    var basePrice = TryReadInt(rowData, "BasePrice");
+                    var lastPurchasePrice = TryReadInt(rowData, "LastPurchasePrice");
+                    var dailyPurchasePrice = TryReadInt(rowData, "DailyPurchasePrice");
+                    if (basePrice.HasValue)
+                    {
+                        existing.BasePrice = basePrice.Value;
+                        existing.LastPurchasePrice = lastPurchasePrice ?? basePrice.Value;
+                        existing.DailyPurchasePrice = dailyPurchasePrice ?? basePrice.Value;
+                    }
+                    else
+                    {
+                        if (lastPurchasePrice.HasValue) existing.LastPurchasePrice = lastPurchasePrice.Value;
+                        if (dailyPurchasePrice.HasValue) existing.DailyPurchasePrice = dailyPurchasePrice.Value;
+                    }
                     if (rowData.TryGetValue("Unit", out var unit)) existing.Unit = string.IsNullOrWhiteSpace(unit) ? null : unit;
 
                     if (rowData.TryGetValue("CategoryCode", out var cc) && !string.IsNullOrWhiteSpace(cc))
@@ -153,7 +166,9 @@ public sealed class ImportMaterialsCommandHandler : IRequestHandler<ImportMateri
                 Name = rowData.TryGetValue("Name", out var nn) ? nn : null,
                 IsActive = rowData.TryGetValue("IsActive", out var aa) && ParseBool(aa),
                 CreatedAtUtc = DateTime.UtcNow,
-                BasePrice = rowData.TryGetValue("BasePrice", out var bp) ? ParseInt(bp) : 0,
+                BasePrice = TryReadInt(rowData, "BasePrice") ?? 0,
+                LastPurchasePrice = TryReadInt(rowData, "LastPurchasePrice") ?? TryReadInt(rowData, "BasePrice") ?? 0,
+                DailyPurchasePrice = TryReadInt(rowData, "DailyPurchasePrice") ?? TryReadInt(rowData, "BasePrice") ?? 0,
                 Unit = rowData.TryGetValue("Unit", out var unit2) && !string.IsNullOrWhiteSpace(unit2) ? unit2 : null,
                 CategoryId = rowData.TryGetValue("CategoryCode", out var ccode) && !string.IsNullOrWhiteSpace(ccode)
                     ? (await _categoryRepository.FindAsync(x => x.Code == ccode, cancellationToken))?.Id
@@ -186,6 +201,8 @@ public sealed class ImportMaterialsCommandHandler : IRequestHandler<ImportMateri
                     existingByCode.IsActive = ne.IsActive;
                     existingByCode.CategoryId = ne.CategoryId ?? existingByCode.CategoryId;
                     existingByCode.BasePrice = ne.BasePrice;
+                    existingByCode.LastPurchasePrice = ne.LastPurchasePrice;
+                    existingByCode.DailyPurchasePrice = ne.DailyPurchasePrice;
                     existingByCode.Unit = ne.Unit;
                     existingByCode.DynamicFieldsJson = ne.DynamicFieldsJson;
                     _repository.Update(existingByCode);
@@ -283,4 +300,9 @@ public sealed class ImportMaterialsCommandHandler : IRequestHandler<ImportMateri
         if (int.TryParse(value, NumberStyles.Integer, CultureInfo.CurrentCulture, out var j)) return j;
         return 0;
     }
+
+    private static int? TryReadInt(Dictionary<string, string> rowData, string key)
+        => rowData.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
+            ? ParseInt(value)
+            : null;
 }

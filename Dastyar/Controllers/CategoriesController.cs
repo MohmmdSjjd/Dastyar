@@ -20,9 +20,9 @@ public sealed class CategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories([FromQuery] string? scope, CancellationToken cancellationToken)
     {
-        var items = await _sender.Send(new GetCategoriesQuery(), cancellationToken);
+        var items = await _sender.Send(new GetCategoriesQuery(scope), cancellationToken);
         return Ok(items);
     }
 
@@ -51,9 +51,26 @@ public sealed class CategoriesController : ControllerBase
                     request.Code,
                     request.Name,
                     request.ParentCategoryCode,
-                    request.UnitDefault),
+                    request.UnitDefault,
+                    request.Scope,
+                    request.IsActive,
+                    request.SortOrder),
                 cancellationToken);
 
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCategory(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _sender.Send(new DeleteCategoryCommand(id), cancellationToken);
             return NoContent();
         }
         catch (InvalidOperationException ex)

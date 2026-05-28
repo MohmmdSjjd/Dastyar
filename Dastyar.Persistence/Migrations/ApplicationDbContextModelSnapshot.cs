@@ -115,6 +115,9 @@ namespace Dastyar.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<int?>("LastUpdatedByDelegatedId")
                         .HasColumnType("int");
 
@@ -128,6 +131,14 @@ namespace Dastyar.Persistence.Migrations
 
                     b.Property<Guid?>("ParentCategoryId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
 
                     b.Property<string>("UnitDefault")
                         .HasMaxLength(50)
@@ -233,6 +244,9 @@ namespace Dastyar.Persistence.Migrations
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("DailyPurchasePrice")
+                        .HasColumnType("int");
+
                     b.Property<bool>("Deleted")
                         .HasColumnType("bit");
 
@@ -255,6 +269,9 @@ namespace Dastyar.Persistence.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<int>("LastPurchasePrice")
+                        .HasColumnType("int");
 
                     b.Property<int?>("LastUpdatedByDelegatedId")
                         .HasColumnType("int");
@@ -339,6 +356,68 @@ namespace Dastyar.Persistence.Migrations
                     b.ToTable("MaterialAddonAssignments", (string)null);
                 });
 
+            modelBuilder.Entity("Dastyar.Domain.Entities.MaterialPriceChangeLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ChangeSource")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int?>("CreatedByDelegatedId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("LastUpdatedByDelegatedId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LastUpdatedById")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("NewValue")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OldValue")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PriceType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialId", "ChangedAtUtc");
+
+                    b.ToTable("MaterialPriceChangeLogs", (string)null);
+                });
+
             modelBuilder.Entity("Dastyar.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -397,6 +476,10 @@ namespace Dastyar.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateTime?>("UpdatedOn")
                         .HasColumnType("datetime2");
 
@@ -409,6 +492,65 @@ namespace Dastyar.Persistence.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.ToTable("Products", (string)null);
+                });
+
+            modelBuilder.Entity("Dastyar.Domain.Entities.ProductMaterial", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("CreatedByDelegatedId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("LastUpdatedByDelegatedId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LastUpdatedById")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("WastePercent")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialId");
+
+                    b.HasIndex("ProductId", "MaterialId")
+                        .IsUnique();
+
+                    b.ToTable("ProductMaterials", (string)null);
                 });
 
             modelBuilder.Entity("Dastyar.Domain.Entities.Category", b =>
@@ -456,6 +598,17 @@ namespace Dastyar.Persistence.Migrations
                     b.Navigation("TargetMaterial");
                 });
 
+            modelBuilder.Entity("Dastyar.Domain.Entities.MaterialPriceChangeLog", b =>
+                {
+                    b.HasOne("Dastyar.Domain.Entities.Material", "Material")
+                        .WithMany()
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Material");
+                });
+
             modelBuilder.Entity("Dastyar.Domain.Entities.Product", b =>
                 {
                     b.HasOne("Dastyar.Domain.Entities.Category", "Category")
@@ -464,6 +617,25 @@ namespace Dastyar.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Dastyar.Domain.Entities.ProductMaterial", b =>
+                {
+                    b.HasOne("Dastyar.Domain.Entities.Material", "Material")
+                        .WithMany()
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Dastyar.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Material");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Dastyar.Domain.Entities.Category", b =>

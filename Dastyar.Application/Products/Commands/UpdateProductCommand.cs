@@ -9,6 +9,7 @@ public sealed record UpdateProductCommand(
     string Code,
     string Name,
     bool IsActive,
+    string? Unit = null,
     string? DynamicFieldsJson = null) : IRequest<Unit>;
 
 public sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, Unit>
@@ -46,6 +47,7 @@ public sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProductC
         product.Code = request.Code.Trim();
         product.Name = request.Name.Trim();
         product.IsActive = request.IsActive;
+        product.Unit = string.IsNullOrWhiteSpace(request.Unit) ? null : request.Unit.Trim();
 
         // به‌روزرسانی فیلدهای دینامیک
         if (request.DynamicFieldsJson != null)

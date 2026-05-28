@@ -1,4 +1,5 @@
 using Dastyar.Domain.Entities;
+using Dastyar.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,6 +15,9 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
         builder.Property(x => x.Code).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Scope).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(x => x.IsActive).IsRequired();
+        builder.Property(x => x.SortOrder).IsRequired();
         builder.Property(x => x.UnitDefault).HasMaxLength(50);
 
         builder.HasOne(x => x.ParentCategory)
