@@ -13,15 +13,18 @@ public sealed class GetMaterialsQueryHandler : IRequestHandler<GetMaterialsQuery
     private readonly IRepository<Material, Guid> _materialRepository;
     private readonly IRepository<Category, Guid> _categoryRepository;
     private readonly IRepository<MaterialAddonAssignment, Guid> _assignmentRepository;
+    private readonly IRepository<ProductMaterial, Guid> _productMaterialRepository;
 
     public GetMaterialsQueryHandler(
         IRepository<Material, Guid> materialRepository,
         IRepository<Category, Guid> categoryRepository,
-        IRepository<MaterialAddonAssignment, Guid> assignmentRepository)
+        IRepository<MaterialAddonAssignment, Guid> assignmentRepository,
+        IRepository<ProductMaterial, Guid> productMaterialRepository)
     {
         _materialRepository = materialRepository;
         _categoryRepository = categoryRepository;
         _assignmentRepository = assignmentRepository;
+        _productMaterialRepository = productMaterialRepository;
     }
 
     public async Task<IReadOnlyList<MaterialDto>> Handle(GetMaterialsQuery request, CancellationToken cancellationToken)
@@ -36,6 +39,11 @@ public sealed class GetMaterialsQueryHandler : IRequestHandler<GetMaterialsQuery
 
         var categories = await _categoryRepository.ListAsync(cancellationToken);
         var assignments = await _assignmentRepository.ListAsync(cancellationToken);
+
+        var usageCounts = await _productMaterialRepository.ListAsync(cancellationToken);
+        var usageByMaterialId = usageCounts
+            .GroupBy(x => x.MaterialId)
+            .ToDictionary(group => group.Key, group => group.Select(x => x.ProductId).Distinct().Count());
 
         var categoryById = categories.ToDictionary(x => x.Id, x => x);
         var materialsById = allMaterials.ToDictionary(x => x.Id, x => x);
@@ -126,6 +134,7 @@ public sealed class GetMaterialsQueryHandler : IRequestHandler<GetMaterialsQuery
                 Unit = material.Unit,
                 UnitEffective = unitEffective,
                 DynamicFieldsJson = material.DynamicFieldsJson,
+                UsageProductCount = usageByMaterialId.TryGetValue(material.Id, out var usageCount) ? usageCount : 0,
                 AppliedAddons = appliedAddons
                     .OrderBy(x => x.Name ?? string.Empty)
                     .ToList()

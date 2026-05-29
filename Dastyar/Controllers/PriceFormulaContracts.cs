@@ -15,6 +15,7 @@ public sealed record CategoryNodeDto(
     int SortOrder,
     Guid? ParentCategoryId,
     string? UnitDefault,
+    int Level,
     IReadOnlyList<CategoryNodeDto> Children);
 
 public sealed record UpdateMaterialPricesRequest(
@@ -68,3 +69,36 @@ public sealed record ProductCostReportDto(
     int MaterialCost,
     int TotalCost,
     IReadOnlyList<ProductMaterialLineDto> Lines);
+
+
+public sealed record MaterialUsageProductDto(
+    Guid ProductId,
+    string? ProductCode,
+    string? ProductName,
+    decimal Quantity,
+    decimal WastePercent,
+    string? Unit,
+    int UnitPrice,
+    int LineTotal);
+
+public sealed record MaterialIdentityReportDto(
+    Guid MaterialId,
+    string? MaterialCode,
+    string? MaterialName,
+    string? CategoryCode,
+    string? CategoryName,
+    string PriceBasis,
+    int SelectedUnitPrice,
+    int UsageProductCount,
+    IReadOnlyList<MaterialUsageProductDto> UsedInProducts);
+
+public sealed record ProductIdentityReportDto(
+    Guid ProductId,
+    string? ProductCode,
+    string? ProductName,
+    string? CategoryCode,
+    string? CategoryName,
+    string PriceBasis,
+    int MaterialCost,
+    int TotalCost,
+    IReadOnlyList<ProductMaterialLineDto> Materials);

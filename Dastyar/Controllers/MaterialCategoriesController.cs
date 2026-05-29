@@ -151,7 +151,7 @@ public sealed class MaterialCategoriesController(ApplicationDbContext db) : Cont
 
             var basePrice = ReadInt(row, "BasePrice");
             var lastPrice = ReadInt(row, "LastPurchasePrice") ?? basePrice ?? 0;
-            var dailyPrice = ReadInt(row, "DailyPurchasePrice") ?? lastPrice;
+            var dailyPrice = lastPrice;
 
             db.Materials.Add(new Material
             {
@@ -196,10 +196,10 @@ public sealed class MaterialCategoriesController(ApplicationDbContext db) : Cont
                 group => group.Key,
                 group => group.OrderBy(category => category.SortOrder).ThenBy(category => category.Name).ToList());
 
-        CategoryNodeDto BuildNode(Category category)
+        CategoryNodeDto BuildNode(Category category, int level)
         {
             var children = childrenMap.TryGetValue(category.Id, out var categoryChildren)
-                ? categoryChildren.Select(categoryItem => BuildNode(categoryItem)).ToList()
+                ? categoryChildren.Select(categoryItem => BuildNode(categoryItem, level + 1)).ToList()
                 : new List<CategoryNodeDto>();
 
             return new CategoryNodeDto(
@@ -211,6 +211,7 @@ public sealed class MaterialCategoriesController(ApplicationDbContext db) : Cont
                 category.SortOrder,
                 category.ParentCategoryId,
                 category.UnitDefault,
+                level,
                 children);
         }
 
@@ -218,7 +219,7 @@ public sealed class MaterialCategoriesController(ApplicationDbContext db) : Cont
             .Where(category => category.ParentCategoryId is null)
             .OrderBy(category => category.SortOrder)
             .ThenBy(category => category.Name)
-            .Select(category => BuildNode(category))
+            .Select(category => BuildNode(category, 0))
             .ToList();
     }
 

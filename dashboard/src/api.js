@@ -124,6 +124,15 @@ export async function exportMaterials(fields) {
   return { blob: res.data, fileName }
 }
 
+export async function importNewCategoryMaterials(categoryId, file) {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await client.post(`/api/material-categories/${categoryId}/materials/import-new`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return res.data
+}
+
 export async function fetchCategories() {
   const res = await client.get('/api/categories')
   return res.data
@@ -177,6 +186,50 @@ export async function updateFieldDefinition(id, payload) {
 export async function deleteFieldDefinition(id) {
   const res = await client.delete(`/api/field-definitions/${id}`);
   return res.data;
+}
+
+export async function fetchMaterialCategoryTree() {
+  const res = await client.get('/api/material-categories/tree')
+  return res.data
+}
+
+export async function importMaterialPrices(file, categoryId = null) {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await client.post('/api/materials/import-last-price-update-only', form, {
+    params: categoryId ? { categoryId } : undefined,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return res.data
+}
+
+export async function updateMaterialPrices(materialId, payload) {
+  const res = await client.patch(`/api/materials/${materialId}/prices`, payload)
+  return res.data
+}
+
+export async function updateMaterialsDailyPricePercent(payload) {
+  const res = await client.post('/api/materials/daily-price/percent', payload)
+  return res.data
+}
+
+export async function fetchMaterialUsageProducts(materialId) {
+  const res = await client.get(`/api/materials/${materialId}/usage-products`)
+  return res.data
+}
+
+export async function fetchMaterialIdentity(materialId, priceBasis = 'last') {
+  const res = await client.get('/api/reports/material-identity', {
+    params: { materialId, priceBasis },
+  })
+  return res.data
+}
+
+export async function fetchProductIdentity(productId, priceBasis = 'last') {
+  const res = await client.get('/api/reports/product-identity', {
+    params: { productId, priceBasis },
+  })
+  return res.data
 }
 
 export default client

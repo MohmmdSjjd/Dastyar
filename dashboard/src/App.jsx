@@ -1,19 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Button, Layout, Menu, Typography } from "antd";
 import {
   DashboardOutlined,
   AppstoreOutlined,
-  UploadOutlined,
-  SearchOutlined,
   TagsOutlined,
+  FileTextOutlined,
+  ClusterOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
-import AddMaterial from "./components/AddProduct";
-import ImportProducts from "./components/ImportProducts";
-import SearchMaterials from "./components/SearchProducts";
+import ProductsList from "./components/ProductsList";
 import MaterialsList from "./components/ProductsList";
+import ProductCategories from "./components/Categories";
+import MaterialCategories from "./components/Categories";
+import Reports from "./components/Reports";
 import DashboardStats from "./components/DashboardStats";
-import FieldDefinitions from "./components/FieldDefinitions";
-import Categories from "./components/Categories";
 import Login from "./components/Login";
 import { getAuthToken, setAuthToken } from "./api";
 
@@ -21,35 +21,12 @@ const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
 
 const menuItems = [
-  {
-    label: "داشبورد",
-    key: "dashboard",
-    icon: <DashboardOutlined />,
-  },
-  {
-    label: "مواد اولیه",
-    key: "materials",
-    icon: <AppstoreOutlined />,
-    children: [
-      { label: "لیست مواد اولیه", key: "materials/list" },
-      { label: "افزودن ماده اولیه", key: "materials/add" },
-      {
-        label: "دسته‌بندی‌ها",
-        key: "materials/categories",
-        icon: <TagsOutlined />,
-      },
-    ],
-  },
-  {
-    label: "عملیات",
-    key: "operations",
-    icon: <UploadOutlined />,
-    children: [
-      { label: "ایمپورت", key: "operations/import" },
-      { label: "جستجو", key: "operations/search", icon: <SearchOutlined /> },
-      { label: "فیلدها", key: "operations/fields" },
-    ],
-  },
+  { label: "داشبورد", key: "dashboard", icon: <DashboardOutlined /> },
+  { label: "لیست محصولات", key: "products", icon: <FileTextOutlined /> },
+  { label: "لیست مواد اولیه", key: "materials", icon: <AppstoreOutlined /> },
+  { label: "دسته‌بندی محصولات", key: "product-categories", icon: <TagsOutlined /> },
+  { label: "دسته‌بندی مواد اولیه", key: "material-categories", icon: <ClusterOutlined /> },
+  { label: "گزارشات", key: "reports", icon: <BarChartOutlined /> },
 ];
 
 export default function App() {
@@ -59,24 +36,21 @@ export default function App() {
   useEffect(() => {
     const handleUnauthorized = () => setToken(null);
     window.addEventListener("dastyar:unauthorized", handleUnauthorized);
-    return () =>
-      window.removeEventListener("dastyar:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("dastyar:unauthorized", handleUnauthorized);
   }, []);
 
   const sectionTitle = useMemo(() => {
     switch (selectedKey) {
-      case "materials/list":
+      case "products":
+        return "لیست محصولات";
+      case "materials":
         return "لیست مواد اولیه";
-      case "materials/add":
-        return "افزودن ماده اولیه";
-      case "materials/categories":
-        return "دسته‌بندی‌ها";
-      case "operations/import":
-        return "ایمپورت مواد اولیه";
-      case "operations/search":
-        return "جستجوی مواد اولیه";
-      case "operations/fields":
-        return "فیلدهای داینامیک";
+      case "product-categories":
+        return "دسته‌بندی محصولات";
+      case "material-categories":
+        return "دسته‌بندی مواد اولیه";
+      case "reports":
+        return "گزارشات";
       default:
         return "داشبورد";
     }
@@ -84,18 +58,16 @@ export default function App() {
 
   const renderSection = () => {
     switch (selectedKey) {
-      case "materials/list":
+      case "products":
+        return <ProductsList />;
+      case "materials":
         return <MaterialsList />;
-      case "materials/add":
-        return <AddMaterial />;
-      case "materials/categories":
-        return <Categories />;
-      case "operations/import":
-        return <ImportProducts />;
-      case "operations/search":
-        return <SearchMaterials />;
-      case "operations/fields":
-        return <FieldDefinitions />;
+      case "product-categories":
+        return <ProductCategories />;
+      case "material-categories":
+        return <MaterialCategories />;
+      case "reports":
+        return <Reports />;
       default:
         return <DashboardStats />;
     }
@@ -112,12 +84,7 @@ export default function App() {
 
   return (
     <Layout className="app-shell">
-      <Sider
-        width={286}
-        breakpoint="lg"
-        collapsedWidth={0}
-        className="app-sider"
-      >
+      <Sider width={286} breakpoint="lg" collapsedWidth={0} className="app-sider">
         <div className="sidebar-logo">
           <div className="sidebar-logo-mark">دستیار</div>
           <div>
@@ -132,7 +99,6 @@ export default function App() {
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
-          defaultOpenKeys={["materials", "operations"]}
           items={menuItems}
           onClick={({ key }) => setSelectedKey(key)}
         />
@@ -146,7 +112,7 @@ export default function App() {
                 {sectionTitle}
               </Title>
               <Text className="text-emerald-50">
-                مواد اولیه، دسته‌بندی‌ها و افزودنی‌ها را دقیق و سریع کنترل کنید.
+                مدیریت محصولات، مواد اولیه، دسته‌بندی‌ها و گزارشات.
               </Text>
             </div>
             <Button

@@ -19,6 +19,11 @@ import {
 } from "antd";
 import {
   createCategory,
+  createMaterial,
+  importNewCategoryMaterials,
+  updateMaterialPrices,
+  updateMaterialsDailyPricePercent,
+  fetchMaterialUsageProducts,
   createMaterialAddonAssignment,
   deleteMaterialAddonAssignment,
   fetchCategories,
@@ -28,6 +33,16 @@ import {
 } from "../api";
 
 const { Text } = Typography;
+
+function formatPrice(value) {
+  return typeof value === "number" ? value.toLocaleString("fa-IR") : "-";
+}
+
+function getCategoryLabel(level, name) {
+  if (level === 0) return `گروه اصلی · ${name}`;
+  if (level === 1) return `گروه فرعی · ${name}`;
+  return `نام مواد اولیه · ${name}`;
+}
 
 function buildTree(categories) {
   const nodesById = new Map();
@@ -55,8 +70,46 @@ function buildTree(categories) {
   return roots;
 }
 
-function formatPrice(value) {
-  return typeof value === "number" ? value.toLocaleString("fa-IR") : "-";
+function getCategoryDepthMap(categories) {
+  const byId = new Map(categories.map((category) => [category.id, category]));
+  const memo = new Map();
+
+  const getDepth = (categoryId) => {
+    if (!categoryId) return 0;
+    if (memo.has(categoryId)) return memo.get(categoryId);
+
+    const category = byId.get(categoryId);
+    if (!category || !category.parentCategoryId) {
+      memo.set(categoryId, 0);
+      return 0;
+    }
+
+    const depth = getDepth(category.parentCategoryId) + 1;
+    memo.set(categoryId, depth);
+    return depth;
+  };
+
+  return Object.fromEntries(categories.map((category) => [category.id, getDepth(category.id)]));
+}
+
+function getDescendantCategoryCodes(categories, rootCode) {
+  if (!rootCode) return [];
+  const byCode = new Map(categories.map((category) => [category.code, category]));
+  const root = byCode.get(rootCode);
+  if (!root) return [];
+
+  const codes = [];
+  const stack = [root];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) continue;
+    codes.push(current.code);
+    categories
+      .filter((category) => category.parentCategoryId === current.id)
+      .forEach((child) => stack.push(child));
+  }
+
+  return codes;
 }
 
 export default function Categories() {
@@ -71,6 +124,21 @@ export default function Categories() {
   const [selectedAddonCodes, setSelectedAddonCodes] = useState([]);
   const [addonQuantities, setAddonQuantities] = useState({});
   const [addonUnits, setAddonUnits] = useState({});
+  const [materialModalVisible, setMaterialModalVisible] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState(null);
+  const [materialPriceModalVisible, setMaterialPriceModalVisible] = useState(false);
+  const [materialPriceTarget, setMaterialPriceTarget] = useState(null);
+  const [dailyPercentModalVisible, setDailyPercentModalVisible] = useState(false);
+  const [materialImportModalVisible, setMaterialImportModalVisible] = useState(false);
+  const [materialImportFile, setMaterialImportFile] = useState(null);
+  const [materialUsageModalVisible, setMaterialUsageModalVisible] = useState(false);
+  const [materialUsage, setMaterialUsage] = useState([]);
+  const [materialUsageTitle, setMaterialUsageTitle] = useState('شناسنامه ماده اولیه');
+  const [materialUsageLoading, setMaterialUsageLoading] = useState(false);
+  const [materialForm] = Form.useForm();
+  const [materialPriceForm] = Form.useForm();
+  const [dailyPercentForm] = Form.useForm();
+  const [materialImportForm] = Form.useForm();
   const [form] = Form.useForm();
 
   const selectedCategory = useMemo(
@@ -103,6 +171,27 @@ export default function Categories() {
     materials.forEach((material) => map.set(material.code, material));
     return map;
   }, [materials]);
+
+  const categoryDepthMap = useMemo(() => getCategoryDepthMap(categories), [categories]);
+  const selectedCategoryCodes = useMemo(
+    () => getDescendantCategoryCodes(categories, selectedCode),
+    [categories, selectedCode],
+  );
+  const selectedMaterials = useMemo(
+    () => materials.filter((material) => selectedCategoryCodes.includes(material.categoryCode)),
+    [materials, selectedCategoryCodes],
+  );
+
+  const treeData = useMemo(() => {
+    const decorate = (nodes, level = 0) =>
+      nodes.map((node) => ({
+        ...node,
+        title: getCategoryLabel(level, node.title),
+        children: node.children?.length ? decorate(node.children, level + 1) : [],
+      }));
+
+    return decorate(buildTree(categories));
+  }, [categories]);
 
   const selectedAssignments = useMemo(() => {
     if (!selectedCategory) return [];
@@ -244,6 +333,164 @@ export default function Categories() {
     }
   };
 
+  const openMaterialCreate = () => {
+    materialForm.resetFields();
+    materialForm.setFieldsValue({
+      categoryCode: selectedCategory?.code || undefined,
+      basePrice: 0,
+      lastPurchasePrice: 0,
+      dailyPurchasePrice: 0,
+      isActive: true,
+    });
+    setEditingMaterial(null);
+    setMaterialModalVisible(true);
+  };
+
+  const openMaterialEdit = (material) => {
+    setEditingMaterial(material);
+    materialForm.setFieldsValue({
+      code: material.code,
+      name: material.name,
+      categoryCode: material.categoryCode || undefined,
+      basePrice: material.basePrice || 0,
+      lastPurchasePrice: material.lastPurchasePrice || material.basePrice || 0,
+      dailyPurchasePrice: material.dailyPurchasePrice || material.lastPurchasePrice || material.basePrice || 0,
+      unit: material.unit || undefined,
+      isActive: material.isActive,
+    });
+    setMaterialModalVisible(true);
+  };
+
+  const handleMaterialSubmit = async (values) => {
+    try {
+      const payload = {
+        code: values.code,
+        name: values.name,
+        categoryCode: values.categoryCode || null,
+        basePrice: values.basePrice || 0,
+        lastPurchasePrice: values.lastPurchasePrice || values.basePrice || 0,
+        dailyPurchasePrice: values.dailyPurchasePrice || values.lastPurchasePrice || values.basePrice || 0,
+        unit: values.unit || null,
+        isActive: values.isActive ?? true,
+      };
+
+      if (editingMaterial) {
+        await updateMaterialPrices(editingMaterial.id, {
+          lastPurchasePrice: payload.lastPurchasePrice,
+          dailyPurchasePrice: payload.dailyPurchasePrice,
+          changeSource: 'manual',
+        });
+        message.success('قیمت ماده اولیه به‌روزرسانی شد');
+      } else {
+        await createMaterial(payload);
+        message.success('ماده اولیه جدید ثبت شد');
+      }
+
+      setMaterialModalVisible(false);
+      setEditingMaterial(null);
+      materialForm.resetFields();
+      load();
+    } catch (error) {
+      message.error(error.response?.data?.error || 'خطا در ذخیره ماده اولیه');
+    }
+  };
+
+  const openMaterialPriceModal = (material) => {
+    setMaterialPriceTarget(material);
+    materialPriceForm.setFieldsValue({
+      lastPurchasePrice: material.lastPurchasePrice || material.basePrice || 0,
+      dailyPurchasePrice: material.dailyPurchasePrice || material.lastPurchasePrice || material.basePrice || 0,
+    });
+    setMaterialPriceModalVisible(true);
+  };
+
+  const handleMaterialPriceSubmit = async (values) => {
+    if (!materialPriceTarget) return;
+    try {
+      await updateMaterialPrices(materialPriceTarget.id, {
+        lastPurchasePrice: values.lastPurchasePrice,
+        dailyPurchasePrice: values.dailyPurchasePrice,
+        changeSource: 'manual',
+      });
+      message.success('قیمت‌ها بروزرسانی شد');
+      setMaterialPriceModalVisible(false);
+      setMaterialPriceTarget(null);
+      materialPriceForm.resetFields();
+      load();
+    } catch (error) {
+      message.error(error.response?.data?.error || 'خطا در بروزرسانی قیمت');
+    }
+  };
+
+  const openDailyPercentModal = () => {
+    if (!selectedCategory) {
+      message.warning('یک دسته‌بندی انتخاب کنید');
+      return;
+    }
+    dailyPercentForm.setFieldsValue({ percent: 0 });
+    setDailyPercentModalVisible(true);
+  };
+
+  const handleDailyPercentSubmit = async (values) => {
+    if (!selectedCategory) return;
+    try {
+      await updateMaterialsDailyPricePercent({
+        categoryId: selectedCategory.id,
+        percent: values.percent,
+        includeChildren: true,
+        changeSource: 'percent',
+      });
+      message.success('فی خرید روز با درصد اعمال شد');
+      setDailyPercentModalVisible(false);
+      dailyPercentForm.resetFields();
+      load();
+    } catch (error) {
+      message.error(error.response?.data?.error || 'خطا در اعمال درصد');
+    }
+  };
+
+  const openMaterialImportModal = () => {
+    setMaterialImportFile(null);
+    materialImportForm.resetFields();
+    setMaterialImportModalVisible(true);
+  };
+
+  const handleImportMaterials = async () => {
+    if (!selectedCategory) {
+      message.warning('یک دسته‌بندی انتخاب کنید');
+      return;
+    }
+
+    if (!materialImportFile) {
+      message.warning('فایل Excel را انتخاب کنید');
+      return;
+    }
+
+    try {
+      await importNewCategoryMaterials(selectedCategory.id, materialImportFile);
+      message.success('مواد اولیه جدید از Excel ثبت شد');
+      setMaterialImportModalVisible(false);
+      setMaterialImportFile(null);
+      load();
+    } catch (error) {
+      message.error(error.response?.data?.error || 'خطا در ایمپورت Excel');
+    }
+  };
+
+  const openUsageProducts = async (material) => {
+    setMaterialUsageTitle(`${material.name || material.code || 'ماده اولیه'}`);
+    setMaterialUsageModalVisible(true);
+    setMaterialUsageLoading(true);
+    try {
+      const result = await fetchMaterialUsageProducts(material.id);
+      setMaterialUsage(result.items || []);
+    } catch (error) {
+      message.error(error.response?.data?.error || 'خطا در دریافت محصولات');
+    } finally {
+      setMaterialUsageLoading(false);
+    }
+  };
+
   const assignmentColumns = [
     {
       title: "ماده افزودنی",
@@ -310,7 +557,7 @@ export default function Categories() {
               <Empty description="دسته‌بندی ثبت نشده است" />
             ) : (
               <Tree
-                treeData={buildTree(categories)}
+                treeData={treeData}
                 selectedKeys={selectedCode ? [selectedCode] : []}
                 defaultExpandAll
                 onSelect={(keys) => setSelectedCode(keys[0] || null)}
@@ -327,6 +574,15 @@ export default function Categories() {
                 <Space wrap>
                   <Button onClick={() => openEdit(selectedCategory)}>
                     ویرایش
+                  </Button>
+                  <Button onClick={openMaterialCreate}>
+                    ماده اولیه
+                  </Button>
+                  <Button onClick={openMaterialImportModal}>
+                    Excel جدید
+                  </Button>
+                  <Button onClick={openDailyPercentModal}>
+                    افزایش روز %
                   </Button>
                   <Button type="primary" onClick={openAddons}>
                     افزودنی‌ها
@@ -363,6 +619,74 @@ export default function Categories() {
                   size="small"
                   scroll={{ x: 720 }}
                   locale={{ emptyText: "افزودنی ثبت نشده است" }}
+                />
+
+                <Divider orientation="right">مواد اولیه شاخه انتخاب‌شده</Divider>
+                <Table
+                  columns={[
+                    {
+                      title: 'کد',
+                      dataIndex: 'code',
+                      key: 'code',
+                      width: 120,
+                      render: (value) => <code>{value}</code>,
+                    },
+                    {
+                      title: 'نام',
+                      dataIndex: 'name',
+                      key: 'name',
+                    },
+                    {
+                      title: 'دسته',
+                      dataIndex: 'categoryName',
+                      key: 'categoryName',
+                    },
+                    {
+                      title: 'فی آخرین خرید',
+                      dataIndex: 'lastPurchasePrice',
+                      key: 'lastPurchasePrice',
+                      width: 140,
+                      render: (value) => formatPrice(value),
+                    },
+                    {
+                      title: 'فی خرید روز',
+                      dataIndex: 'dailyPurchasePrice',
+                      key: 'dailyPurchasePrice',
+                      width: 140,
+                      render: (value) => formatPrice(value),
+                    },
+                    {
+                      title: 'تعداد محصولات مصرف‌کننده',
+                      dataIndex: 'usageProductCount',
+                      key: 'usageProductCount',
+                      width: 170,
+                      render: (value) => formatPrice(value),
+                    },
+                    {
+                      title: 'اقدامات',
+                      key: 'actions',
+                      width: 220,
+                      render: (_, record) => (
+                        <Space wrap>
+                          <Button size="small" onClick={() => openMaterialPriceModal(record)}>
+                            قیمت
+                          </Button>
+                          <Button size="small" onClick={() => openUsageProducts(record)}>
+                            شناسنامه
+                          </Button>
+                          <Button size="small" onClick={() => openMaterialEdit(record)}>
+                            ثبت
+                          </Button>
+                        </Space>
+                      ),
+                    },
+                  ]}
+                  dataSource={selectedMaterials}
+                  rowKey="id"
+                  pagination={{ pageSize: 8 }}
+                  size="small"
+                  scroll={{ x: 940 }}
+                  locale={{ emptyText: 'ماده اولیه‌ای برای این شاخه ثبت نشده است' }}
                 />
               </>
             )}
@@ -482,6 +806,149 @@ export default function Categories() {
               })}
             </div>
           )}
+        </Form>
+      </Modal>
+
+      <Modal
+        title={editingMaterial ? `ویرایش قیمت ${editingMaterial.name || editingMaterial.code || ''}` : 'ماده اولیه جدید'}
+        open={materialModalVisible}
+        onCancel={() => {
+          setMaterialModalVisible(false);
+          setEditingMaterial(null);
+          materialForm.resetFields();
+        }}
+        onOk={() => materialForm.submit()}
+        okText="ذخیره"
+        cancelText="لغو"
+        width={720}
+      >
+        <Form form={materialForm} layout="vertical" onFinish={handleMaterialSubmit}>
+          <div className="material-form-grid">
+            <Form.Item
+              name="code"
+              label="کد ماده اولیه"
+              rules={[{ required: !editingMaterial, message: 'کد ماده اولیه الزامی است' }]}
+            >
+              <Input disabled={Boolean(editingMaterial)} placeholder="MAT-001" />
+            </Form.Item>
+            <Form.Item
+              name="name"
+              label="نام ماده اولیه"
+              rules={[{ required: !editingMaterial, message: 'نام ماده اولیه الزامی است' }]}
+            >
+              <Input disabled={Boolean(editingMaterial)} placeholder="نام ماده اولیه" />
+            </Form.Item>
+            <Form.Item name="categoryCode" label="دسته‌بندی">
+              <Select
+                disabled={Boolean(editingMaterial)}
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                options={categoryOptions}
+              />
+            </Form.Item>
+            <Form.Item name="basePrice" label="فی پایه">
+              <InputNumber className="w-full" min={0} step={1000} disabled={Boolean(editingMaterial)} />
+            </Form.Item>
+            <Form.Item name="lastPurchasePrice" label="فی آخرین خرید">
+              <InputNumber className="w-full" min={0} step={1000} />
+            </Form.Item>
+            <Form.Item name="dailyPurchasePrice" label="فی خرید روز">
+              <InputNumber className="w-full" min={0} step={1000} />
+            </Form.Item>
+            <Form.Item name="unit" label="واحد">
+              <Input disabled={Boolean(editingMaterial)} placeholder="کیلوگرم" />
+            </Form.Item>
+          </div>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={`ویرایش قیمت ${materialPriceTarget?.name || materialPriceTarget?.code || ''}`}
+        open={materialPriceModalVisible}
+        onCancel={() => {
+          setMaterialPriceModalVisible(false);
+          setMaterialPriceTarget(null);
+          materialPriceForm.resetFields();
+        }}
+        onOk={() => materialPriceForm.submit()}
+        okText="ذخیره"
+        cancelText="لغو"
+      >
+        <Form form={materialPriceForm} layout="vertical" onFinish={handleMaterialPriceSubmit}>
+          <Form.Item name="lastPurchasePrice" label="فی آخرین خرید" rules={[{ required: true, message: 'مقدار الزامی است' }]}>
+            <InputNumber className="w-full" min={0} step={1000} />
+          </Form.Item>
+          <Form.Item name="dailyPurchasePrice" label="فی خرید روز" rules={[{ required: true, message: 'مقدار الزامی است' }]}>
+            <InputNumber className="w-full" min={0} step={1000} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="ثبت مواد اولیه جدید از Excel"
+        open={materialImportModalVisible}
+        onCancel={() => {
+          setMaterialImportModalVisible(false);
+          setMaterialImportFile(null);
+        }}
+        onOk={handleImportMaterials}
+        okText="بارگذاری"
+        cancelText="لغو"
+      >
+        <Form form={materialImportForm} layout="vertical">
+          <Form.Item label="فایل Excel">
+            <Input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={(event) => setMaterialImportFile(event.target.files?.[0] || null)}
+            />
+          </Form.Item>
+          <Text type="secondary">
+            در این بخش فقط مواد اولیه جدید به شاخه انتخاب‌شده اضافه می‌شوند و رکوردهای تکراری نادیده گرفته می‌شوند.
+          </Text>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={materialUsageTitle}
+        open={materialUsageModalVisible}
+        onCancel={() => setMaterialUsageModalVisible(false)}
+        footer={null}
+        width={800}
+      >
+        <Table
+          loading={materialUsageLoading}
+          dataSource={materialUsage}
+          rowKey={(record) => `${record.productId}-${record.sortOrder || 0}`}
+          pagination={false}
+          columns={[
+            { title: 'کد محصول', dataIndex: 'productCode', key: 'productCode', width: 140 },
+            { title: 'نام محصول', dataIndex: 'productName', key: 'productName' },
+            { title: 'مقدار', dataIndex: 'quantity', key: 'quantity', width: 100 },
+            { title: 'ضایعات %', dataIndex: 'wastePercent', key: 'wastePercent', width: 100 },
+            { title: 'فی', dataIndex: 'unitPrice', key: 'unitPrice', width: 140, render: (value) => formatPrice(value) },
+            { title: 'جمع', dataIndex: 'lineTotal', key: 'lineTotal', width: 140, render: (value) => formatPrice(value) },
+          ]}
+          locale={{ emptyText: 'مصرف‌کننده‌ای برای این ماده اولیه ثبت نشده است' }}
+        />
+      </Modal>
+
+      <Modal
+        title="اعمال درصد روی فی خرید روز"
+        open={dailyPercentModalVisible}
+        onCancel={() => {
+          setDailyPercentModalVisible(false);
+          dailyPercentForm.resetFields();
+        }}
+        onOk={() => dailyPercentForm.submit()}
+        okText="اعمال"
+        cancelText="لغو"
+      >
+        <Form form={dailyPercentForm} layout="vertical" onFinish={handleDailyPercentSubmit}>
+          <Form.Item name="percent" label="درصد تغییر" rules={[{ required: true, message: 'درصد الزامی است' }]}>
+            <InputNumber className="w-full" min={-100} max={1000} step={1} />
+          </Form.Item>
         </Form>
       </Modal>
     </>
