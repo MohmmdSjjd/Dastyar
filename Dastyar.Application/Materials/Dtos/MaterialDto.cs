@@ -14,6 +14,7 @@ public sealed record MaterialDto
     public int DailyPurchasePrice { get; init; }
     public int AddonTotalPrice { get; init; }
     public int FinalPrice { get; init; }
+    public int UsageProductCount { get; init; }
     public string? Unit { get; init; }
     public string? UnitEffective { get; init; }
     public string? DynamicFieldsJson { get; init; }
